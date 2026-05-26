@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="./Untitled.png">
+<title>Vectra</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+}
+
+body {
+    background: #1c1c2e;
+    color: white;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* PANEL IZQUIERDO */
+.left {
+    width: 360px; /* Un ancho optimizado para dar más protagonismo al lienzo */
+    background: #2b2b45;
+    padding: 20px;
+    border-right: 3px solid #9b9bff;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 10;
+    height: 100vh;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-container img {
+    image-rendering: pixelated;
+    border-radius: 8px;
+    background: #111;
+    padding: 5px;
+}
+
+h1 {
+    text-align: center;
+    color: #9b9bff;
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+/* El área de código ahora se expande dinámicamente */
+textarea {
+    text-transform: uppercase;
+    width: 100%;
+    flex: 1; 
+    min-height: 200px; /* Evita que colapse en pantallas ultra pequeñas */
+    resize: none;
+    border: 2px solid transparent;
+    outline: none;
+    border-radius: 10px;
+    padding: 15px;
+    background: #3f3f64;
+    color: white;
+    font-size: 16px;
+    font-family: monospace;
+    transition: 0.3s;
+}
+
+textarea:focus {
+    border-color: #9b9bff;
+}
+
+textarea:disabled, button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #9b9bff;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover:not(:disabled) {
+    background: #7f7fff;
+}
+
+/* Botones secundarios más compactos */
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.scale {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    background: #3f3f64;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+.scale button {
+    width: 40px;
+    padding: 8px;
+}
+
+.scale input {
+    width: 60px;
+    text-align: center;
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    outline: none;
+}
+
+.info {
+    margin-top: 5px;
+    line-height: 1.5;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.info b {
+    color: #9b9bff;
+}
+
+/* AREA DEL CANVAS */
+.canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #111;
+    cursor: grab;
+}
+
+.canvas-container:active {
+    cursor: grabbing;
+}
+
+/* CANVAS GIGANTE */
+#canvas {
+    position: absolute;
+    background: white;
+    transform-origin: center center;
+}
+
+/* MINI INFO */
+.status {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border: 1px solid #333;
+    pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="left">
+        <div class="logo-container">
+            <img src="./Untitled.png" alt="Vectra Logo"  width="65px">
+        </div>
+        <h1>Vectra</h1>
+
+        <textarea id="codigo" placeholder="Ejemplo:&#10;RRRRDDDDLLLLUUUU"></textarea>
+
+        <button id="run">Run</button>
+        
+        <div class="btn-group">
+            <button id="clear">Reset Panel</button>
+            <button id="reset">Reset All</button>
+        </div>
+
+        <div class="scale">
+            <button id="menos">-</button>
+            <input type="text" id="escalaTexto" value="10" readonly>
+            <button id="mas">+</button>
+        </div>
+
+        <div class="info">
+            <p><b>L</b> = Left | <b>R</b> = Right | <b>D</b> = Down | <b>U</b> = Up</p>
+            <hr style="margin: 8px 0; border: 0; border-top: 1px solid #3f3f64;">
+            <p>🖱️ Arrastra con el mouse | 🔍 Zoom con rueda</p>
+        </div>
+    </div>
+
+    <div class="canvas-container" id="contenedorCanvas">
+        <canvas id="canvas" width="5000" height="5000"></canvas>
+        <div class="status">VECTRA ENGINE v1.1</div>
+    </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const contenedor = document.getElementById("contenedorCanvas");
+const codigo = document.getElementById("codigo");
+
+const run = document.getElementById("run");
+const clear = document.getElementById("clear");
+const reset = document.getElementById("reset");
+const mas = document.getElementById("mas");
+const menos = document.getElementById("menos");
+const escalaTexto = document.getElementById("escalaTexto");
+
+let escala = 10;
+const centroInicial = 2500;
+let ancho = centroInicial;
+let alto = centroInicial;
+
+let isRunning = false; 
+
+let offsetX = (contenedor.clientWidth / 2) - centroInicial;
+let offsetY = (contenedor.clientHeight / 2) - centroInicial;
+let zoom = 1;
+
+function actualizarPosicionCanvas() {
+    canvas.style.left = offsetX + "px";
+    canvas.style.top = offsetY + "px";
+    canvas.style.transform = `scale(${zoom})`;
+}
+
+window.addEventListener('load', () => {
+    offsetX = (contenedor.clientWidth / 2) - centroInicial;
+    offsetY = (contenedor.clientHeight / 2) - centroInicial;
+    actualizarPosicionCanvas();
+});
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function pintar(texto) {
+    if (isRunning) return;
+    isRunning = true;
+    
+    run.disabled = true;
+    codigo.disabled = true;
+
+    const comandos = texto.toUpperCase().replace(/\s/g, '');
+
+    for (let i = 0; i < comandos.length; i++) {
+        let letra = comandos[i];
+
+        if (letra === "D") alto += escala;
+        else if (letra === "U") alto -= escala;
+        else if (letra === "L") ancho -= escala;
+        else if (letra === "R") ancho += escala;
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(ancho, alto, escala, escala);
+
+        await sleep(20);
+    }
+
+    run.disabled = false;
+    codigo.disabled = false;
+    isRunning = false;
+}
+
+/* =========================
+   BOTONES
+========================= */
+run.addEventListener("click", () => {
+    pintar(codigo.value);
+});
+
+function limpiarLienzo() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ancho = centroInicial;
+    alto = centroInicial;
+}
+
+clear.addEventListener("click", () => {
+    if (isRunning) return;
+    limpiarLienzo();
+});
+
+reset.addEventListener("click", () => {
+    if (isRunning) return;
+    limpiarLienzo();
+    codigo.value = "";
+});
+
+mas.addEventListener("click", () => {
+    escala++;
+    escalaTexto.value = escala;
+});
+
+menos.addEventListener("click", () => {
+    if (escala > 1) {
+        escala--;
+        escalaTexto.value = escala;
+    }
+});
+
+/* =========================
+   ARRASTRAR CANVAS
+========================= */
+let isDragging = false;
+let startX, startY;
+
+contenedor.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    startX = e.clientX - offsetX;
+    startY = e.clientY - offsetY;
+});
+
+window.addEventListener("mouseup", () => {
+    isDragging = false;
+});
+
+window.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    offsetX = e.clientX - startX;
+    offsetY = e.clientY - startY;
+    actualizarPosicionCanvas();
+});
+
+/* =========================
+   ZOOM CON RUEDA
+========================= */
+contenedor.addEventListener("wheel", (e) => {
+    e.preventDefault();
+
+    if (e.deltaY < 0) {
+        zoom += 0.1;
+    } else {
+        zoom -= 0.1;
+    }
+
+    if (zoom < 0.2) zoom = 0.2;
+    if (zoom > 5) zoom = 5;
+
+    actualizarPosicionCanvas();
+}, { passive: false });
+</script>
+
+</body>
+</html>
