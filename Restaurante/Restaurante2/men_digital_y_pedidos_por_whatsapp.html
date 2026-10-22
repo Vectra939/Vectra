@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabor Express - Menú & Pedidos en Línea</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Transiciones suaves */
+        .transition-all-custom {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-slate-800 h-full flex flex-col justify-between">
+
+    <!-- NAVBAR MAIN -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('menu')">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid font-bold fa-utensils text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-extrabold bg-gradient-to-r from-brand-600 to-amber-600 bg-clip-text text-transparent">SaborExpress</span>
+                        <span class="block text-[10px] text-slate-400 font-semibold -mt-1 tracking-wider uppercase">Gourmet & Fast Delivery</span>
+                    </div>
+                </div>
+
+                <!-- Botón Carrito Mobile & Desktop -->
+                <div class="flex items-center gap-3">
+                    <button id="cart-toggle-btn" onclick="toggleCartModal(true)" class="relative flex items-center gap-2 bg-brand-50 hover:bg-brand-100 text-brand-600 font-bold px-4 py-2.5 rounded-xl transition-all-custom active:scale-95 border border-brand-200">
+                        <i class="fa-solid fa-cart-shopping text-lg"></i>
+                        <span class="hidden sm:inline text-sm">Carrito</span>
+                        <span id="cart-badge" class="bg-brand-600 text-white text-xs px-2 py-0.5 rounded-full font-extrabold shadow-sm">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- PANTALLA 1: MENÚ DE PRODUCTOS -->
+    <main id="screen-menu" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Hero Banner -->
+        <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-brand-950 text-white p-6 sm:p-10 mb-8 shadow-xl">
+            <div class="relative z-10 max-w-xl">
+                <span class="inline-block bg-brand-500/20 text-brand-400 text-xs font-bold px-3 py-1 rounded-full border border-brand-500/30 uppercase tracking-widest mb-3">Envíos directos a tu puerta</span>
+                <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">Los mejores sabores a un clic de distancia.</h1>
+                <p class="text-slate-300 text-sm sm:text-base mb-6">Elige tus platillos favoritos, personaliza tu pedido y enviamos la confirmación al instante por WhatsApp.</p>
+            </div>
+            <div class="absolute right-0 bottom-0 top-0 w-1/2 opacity-20 sm:opacity-40 bg-cover bg-center pointer-events-none" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000&q=80');"></div>
+        </div>
+
+        <!-- Buscador y Categorías -->
+        <div class="sticky top-20 z-20 bg-slate-50/95 backdrop-blur-md py-3 mb-6">
+            <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <!-- Buscador -->
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="search-input" oninput="filterProducts()" placeholder="Buscar platillo o bebida..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                </div>
+
+                <!-- Botones Categoría -->
+                <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none" id="categories-container">
+                    <!-- Categorías inyectadas dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid de Productos -->
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Cargando o inyectado dinámicamente -->
+        </div>
+
+        <!-- Mensaje sin resultados -->
+        <div id="no-results" class="hidden text-center py-16">
+            <i class="fa-solid fa-utensils-slash text-4xl text-slate-300 mb-3"></i>
+            <h3 class="text-lg font-bold text-slate-600">No encontramos resultados</h3>
+            <p class="text-slate-400 text-sm">Intenta buscar con otra palabra clave o selecciona otra categoría.</p>
+        </div>
+    </main>
+
+
+    <!-- PANTALLA 2: RESUMEN DE PEDIDO Y ENVÍO A WHATSAPP -->
+    <main id="screen-confirmation" class="hidden flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            <!-- Encabezado de la Pantalla 2 -->
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 sm:p-8 text-center relative">
+                <button onclick="navigateTo('menu')" class="absolute left-4 top-4 bg-white/20 hover:bg-white/30 text-white p-2.5 rounded-full transition-all">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+                    <i class="fa-solid fa-check text-3xl text-white"></i>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold">¡Pedido Listo para Enviar!</h2>
+                <p class="text-emerald-100 text-sm mt-1">Revisa el resumen de tu orden antes de enviarla a WhatsApp.</p>
+            </div>
+
+            <!-- Detalle de la Orden -->
+            <div class="p-6 sm:p-8 space-y-6">
+                <!-- Datos del Cliente -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">Información del Cliente</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <span class="text-slate-500 block text-xs">Nombre:</span>
+                            <span id="confirm-name" class="font-bold text-slate-800"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-xs">Teléfono:</span>
+                            <span id="confirm-phone" class="font-bold text-slate-800"></span>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <span class="text-slate-500 block text-xs">Dirección de Entrega:</span>
+                            <span id="confirm-address" class="font-bold text-slate-800"></span>
+                        </div>
+                        <div id="confirm-notes-container" class="sm:col-span-2 hidden">
+                            <span class="text-slate-500 block text-xs">Notas Adicionales:</span>
+                            <span id="confirm-notes" class="font-medium text-slate-700 italic"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Platillos -->
+                <div>
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">Detalle de Platillos</h3>
+                    <div id="confirm-items-list" class="divide-y divide-slate-100">
+                        <!-- Inyectado dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Total -->
+                <div class="border-t border-slate-200 pt-4 flex justify-between items-center">
+                    <span class="text-base font-bold text-slate-600">Monto Total:</span>
+                    <span id="confirm-total" class="text-2xl font-black text-brand-600">$0.00 MXN</span>
+                </div>
+
+                <!-- Botón Acción Final a WhatsApp -->
+                <div class="pt-4 space-y-3">
+                    <a id="whatsapp-send-btn" href="#" target="_blank" class="w-full flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-lg font-extrabold py-4 rounded-2xl shadow-lg shadow-emerald-500/30 transition-all transform hover:-translate-y-0.5">
+                        <i class="fa-brands fa-whatsapp text-2xl"></i>
+                        <span>Enviar Pedido por WhatsApp</span>
+                    </a>
+                    
+                    <button onclick="navigateTo('menu')" class="w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-700 py-2">
+                        Modificar o agregar más productos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <!-- MODAL / DRAWER LATERAL DEL CARRITO -->
+    <div id="cart-modal" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+        <!-- Fondo oscuro / Overlay -->
+        <div id="cart-overlay" onclick="toggleCartModal(false)" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+
+        <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
+            <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
+                
+                <!-- Header del Carrito -->
+                <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-bag-shopping text-brand-500 text-xl"></i>
+                        <h2 class="text-lg font-bold">Tu Carrito</h2>
+                    </div>
+                    <button onclick="toggleCartModal(false)" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Items del Carrito -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-4" id="cart-items-container">
+                    <!-- Inyectado dinámicamente -->
+                </div>
+
+                <!-- Footer del Carrito y Formulario Datos de Envío -->
+                <div class="border-t border-slate-100 p-6 bg-slate-50 space-y-4">
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-sm text-slate-500">
+                            <span>Subtotal</span>
+                            <span id="cart-subtotal">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-extrabold text-slate-900">
+                            <span>Total</span>
+                            <span id="cart-total" class="text-brand-600">$0.00 MXN</span>
+                        </div>
+                    </div>
+
+                    <!-- Formulario Datos de Envío -->
+                    <form id="checkout-form" onsubmit="handleProceedToConfirmation(event)" class="space-y-3 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre Completo *</label>
+                            <input type="text" id="cust-name" required placeholder="Ej. Ana García" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Teléfono *</label>
+                            <input type="tel" id="cust-phone" required placeholder="Ej. 2461234567" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Dirección de Entrega *</label>
+                            <input type="text" id="cust-address" required placeholder="Calle, Número, Colonia" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Notas Opcionales</label>
+                            <input type="text" id="cust-notes" placeholder="Ej. Sin cebolla / Timbre 2" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+
+                        <button type="submit" id="btn-submit-cart" class="w-full mt-2 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/30 flex items-center justify-center gap-2 transition-all">
+                            <span>Confirmar y Ver Pedido</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs">
+            <p>© 2026 SaborExpress. Todos los derechos reservados.</p>
+            <p class="mt-1">Pedidos atendidos directamente por WhatsApp al <span class="text-white font-bold">246 214 1581</span></p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT / LOGIC -->
+    <script>
+        // DATOS DE LOS PRODUCTOS (Imágenes Unsplash de alta calidad)
+        const products = [
+            {
+                id: 1,
+                name: 'Hamburguesa Doble Queso & Tocino',
+                category: 'hamburguesas',
+                price: 145,
+                description: 'Doble carne de res premium, queso cheddar fundido, tocino crujiente y salsa especial.',
+                image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 2,
+                name: 'Hamburguesa BBQ Smoke',
+                category: 'hamburguesas',
+                price: 155,
+                description: 'Carne artesanal, aros de cebolla empanizados, queso gouda y salsa BBQ ahumada.',
+                image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 3,
+                name: 'Pizza Pepperoni Supreme',
+                category: 'pizzas',
+                price: 210,
+                description: 'Masa madre crujiente, abundante queso mozzarella y rebanadas de pepperoni italiano.',
+                image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 4,
+                name: 'Pizza Cuatro Quesos',
+                category: 'pizzas',
+                price: 230,
+                description: 'Mezcla cremosa de Mozzarella, Parmesano, Gorgonzola y Queso de Cabra.',
+                image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 5,
+                name: 'Papas Francesas Sazonadas',
+                category: 'entradas',
+                price: 75,
+                description: 'Corte grueso, sazonadas con pimentón dulce y hierbas finas.',
+                image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 6,
+                name: 'Alitas Búfalo (10 pzs)',
+                category: 'entradas',
+                price: 160,
+                description: 'Alitas de pollo crujientes bañadas en nuestra clásica picante salsa Búfalo.',
+                image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 7,
+                name: 'Malteada de Chocolate Belga',
+                category: 'bebidas',
+                price: 70,
+                description: 'Cremoso helado de chocolate belga, crema batida y chispas de chocolate.',
+                image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 8,
+                name: 'Limonada Mineral con Menta',
+                category: 'bebidas',
+                price: 45,
+                description: 'Refrescante jugo de limón natural, menta fresca y agua mineral.',
+                image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 9,
+                name: 'Cheesecake de Frutos Rojos',
+                category: 'postres',
+                price: 85,
+                description: 'Suave pastel de queso estilo Nueva York con compota casera de frutos rojos.',
+                image: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 10,
+                name: 'Brownie con Helado de Vainilla',
+                category: 'postres',
+                price: 80,
+                description: 'Brownie tibio de chocolate servido con una bola de helado de vainilla.',
+                image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80'
+            }
+        ];
+
+        // CATEGORÍAS
+        const categories = [
+            { id: 'todas', label: 'Todas' },
+            { id: 'hamburguesas', label: 'Hamburguesas' },
+            { id: 'pizzas', label: 'Pizzas' },
+            { id: 'entradas', label: 'Entradas' },
+            { id: 'bebidas', label: 'Bebidas' },
+            { id: 'postres', label: 'Postres' }
+        ];
+
+        // ESTADO DE LA APLICACIÓN
+        let cart = [];
+        let selectedCategory = 'todas';
+        let customerInfo = {};
+
+        // INICIALIZACIÓN
+        window.onload = function() {
+            renderCategories();
+            renderProducts();
+            updateCartUI();
+        };
+
+        // NAVEGACIÓN ENTRE PANTALLAS
+        function navigateTo(screen) {
+            const screenMenu = document.getElementById('screen-menu');
+            const screenConfirmation = document.getElementById('screen-confirmation');
+
+            if (screen === 'menu') {
+                screenConfirmation.classList.add('hidden');
+                screenMenu.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (screen === 'confirmation') {
+                screenMenu.classList.add('hidden');
+                screenConfirmation.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // RENDERIZAR CATEGORÍAS
+        function renderCategories() {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = categories.map(cat => `
+                <button onclick="selectCategory('${cat.id}')" class="px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${
+                    selectedCategory === cat.id 
+                    ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' 
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }">
+                    ${cat.label}
+                </button>
+            `).join('');
+        }
+
+        function selectCategory(catId) {
+            selectedCategory = catId;
+            renderCategories();
+            filterProducts();
+        }
+
+        // RENDERIZAR PRODUCTOS
+        function renderProducts(filteredList = null) {
+            const grid = document.getElementById('products-grid');
+            const noResults = document.getElementById('no-results');
+            const listToRender = filteredList || products;
+
+            if (listToRender.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            grid.innerHTML = listToRender.map(product => {
+                const cartItem = cart.find(i => i.id === product.id);
+                const quantity = cartItem ? cartItem.quantity : 0;
+
+                return `
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 flex flex-col justify-between group">
+                    <div>
+                        <div class="relative h-48 overflow-hidden bg-slate-100">
+                            <img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" onerror="this.src='https://placehold.co/600x400/ea580c/ffffff?text=Platillo'">
+                            <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-black text-slate-800 shadow-sm">
+                                $${product.price} MXN
+                            </span>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="font-bold text-slate-800 text-base mb-1 line-clamp-1">${product.name}</h3>
+                            <p class="text-slate-500 text-xs line-clamp-2 leading-relaxed mb-4">${product.description}</p>
+                        </div>
+                    </div>
+
+                    <div class="px-5 pb-5 pt-0">
+                        ${quantity === 0 ? `
+                            <button onclick="addToCart(${product.id})" class="w-full bg-slate-900 hover:bg-brand-600 text-white font-bold py-2.5 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 active:scale-95">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Agregar al Carrito</span>
+                            </button>
+                        ` : `
+                            <div class="flex items-center justify-between bg-brand-50 rounded-xl p-1 border border-brand-200">
+                                <button onclick="updateQuantity(${product.id}, -1)" class="w-8 h-8 rounded-lg bg-white text-brand-600 font-bold flex items-center justify-center shadow-sm hover:bg-brand-100 active:scale-90 transition-all">
+                                    <i class="fa-solid fa-minus text-xs"></i>
+                                </button>
+                                <span class="font-extrabold text-brand-700 text-sm px-2">${quantity}</span>
+                                <button onclick="updateQuantity(${product.id}, 1)" class="w-8 h-8 rounded-lg bg-brand-600 text-white font-bold flex items-center justify-center shadow-sm hover:bg-brand-700 active:scale-90 transition-all">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // FILTRADO
+        function filterProducts() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const filtered = products.filter(product => {
+                const matchesCategory = selectedCategory === 'todas' || product.category === selectedCategory;
+                const matchesSearch = product.name.toLowerCase().includes(searchTerm) || product.description.toLowerCase().includes(searchTerm);
+                return matchesCategory && matchesSearch;
+            });
+            renderProducts(filtered);
+        }
+
+        // LOGICA DE CARRITO
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existing = cart.find(item => item.id === productId);
+
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+
+            updateCartUI();
+            renderProducts();
+        }
+
+        function updateQuantity(productId, delta) {
+            const item = cart.find(i => i.id === productId);
+            if (!item) return;
+
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(i => i.id !== productId);
+            }
+
+            updateCartUI();
+            renderProducts();
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(i => i.id !== productId);
+            updateCartUI();
+            renderProducts();
+        }
+
+        function updateCartUI() {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            // Actualizar Badges y Totales
+            document.getElementById('cart-badge').innerText = totalItems;
+            document.getElementById('cart-subtotal').innerText = `$${subtotal.toFixed(2)}`;
+            document.getElementById('cart-total').innerText = `$${subtotal.toFixed(2)} MXN`;
+
+            // Botón Checkout Habilitado/Deshabilitado
+            const btnSubmit = document.getElementById('btn-submit-cart');
+            if (cart.length === 0) {
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnSubmit.disabled = false;
+                btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            // Renderizar items dentro del modal lateral
+            const container = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fa-solid fa-cart-flatbed text-4xl text-slate-200 mb-3"></i>
+                        <p class="text-slate-500 font-semibold text-sm">Tu carrito está vacío</p>
+                        <p class="text-xs text-slate-400 mt-1">Explora el menú y agrega tus productos favoritos.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = cart.map(item => `
+                <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <img src="${item.image}" alt="${item.name}" class="w-14 h-14 rounded-xl object-cover">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-slate-800 text-xs truncate">${item.name}</h4>
+                        <span class="text-slate-500 text-xs">$${item.price} MXN c/u</span>
+                        <div class="font-extrabold text-brand-600 text-xs mt-0.5">$${(item.price * item.quantity).toFixed(2)}</div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center bg-white rounded-lg border border-slate-200 px-1 py-0.5">
+                            <button onclick="updateQuantity(${item.id}, -1)" class="text-slate-500 hover:text-brand-600 px-1.5 py-0.5 text-xs font-bold">-</button>
+                            <span class="text-xs font-bold px-1.5">${item.quantity}</span>
+                            <button onclick="updateQuantity(${item.id}, 1)" class="text-slate-500 hover:text-brand-600 px-1.5 py-0.5 text-xs font-bold">+</button>
+                        </div>
+                        <button onclick="removeFromCart(${item.id})" class="text-slate-400 hover:text-red-500 p-1">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // TOGGLE MODAL CARRITO
+        function toggleCartModal(open) {
+            const modal = document.getElementById('cart-modal');
+            if (open) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // PANTALLA 2: CONFIRMACIÓN Y FORMATO PARA WHATSAPP
+        function handleProceedToConfirmation(e) {
+            e.preventDefault();
+            if (cart.length === 0) return;
+
+            // Recopilar datos
+            customerInfo = {
+                name: document.getElementById('cust-name').value.trim(),
+                phone: document.getElementById('cust-phone').value.trim(),
+                address: document.getElementById('cust-address').value.trim(),
+                notes: document.getElementById('cust-notes').value.trim()
+            };
+
+            // Mostrar en Pantalla 2
+            document.getElementById('confirm-name').innerText = customerInfo.name;
+            document.getElementById('confirm-phone').innerText = customerInfo.phone;
+            document.getElementById('confirm-address').innerText = customerInfo.address;
+
+            const notesContainer = document.getElementById('confirm-notes-container');
+            if (customerInfo.notes) {
+                document.getElementById('confirm-notes').innerText = customerInfo.notes;
+                notesContainer.classList.remove('hidden');
+            } else {
+                notesContainer.classList.add('hidden');
+            }
+
+            // Renderizar items en pantalla 2
+            const itemsContainer = document.getElementById('confirm-items-list');
+            itemsContainer.innerHTML = cart.map(item => `
+                <div class="py-3 flex justify-between items-center text-sm">
+                    <div>
+                        <span class="font-bold text-slate-800">${item.quantity}x</span>
+                        <span class="text-slate-700 ml-2">${item.name}</span>
+                    </div>
+                    <span class="font-bold text-slate-800">$${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('confirm-total').innerText = `$${total.toFixed(2)} MXN`;
+
+            // Construir mensaje y URL para WhatsApp
+            const whatsappNumber = '522462141581';
+            
+            let message = `🛒 *NUEVO PEDIDO - SABOR EXPRESS*\n\n`;
+            message += `👤 *Cliente:* ${customerInfo.name}\n`;
+            message += `📞 *Teléfono:* ${customerInfo.phone}\n`;
+            message += `📍 *Dirección:* ${customerInfo.address}\n`;
+            if (customerInfo.notes) {
+                message += `📝 *Notas:* ${customerInfo.notes}\n`;
+            }
+            message += `\n--- *DETALLE DEL PEDIDO* ---\n`;
+
+            cart.forEach(item => {
+                message += `• ${item.quantity}x ${item.name} - $${(item.price * item.quantity).toFixed(2)}\n`;
+            });
+
+            message += `\n💰 *TOTAL A PAGAR:* $${total.toFixed(2)} MXN\n\n`;
+            message += `¡Quedo a la espera de la confirmación! Muchas gracias.`;
+
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
+
+            // Asignar al botón final
+            document.getElementById('whatsapp-send-btn').href = whatsappUrl;
+
+            // Cerrar carrito y cambiar a Pantalla 2
+            toggleCartModal(false);
+            navigateTo('confirmation');
+        }
+    </script>
+</body>
+</html>
